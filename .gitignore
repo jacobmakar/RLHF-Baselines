@@ -1,0 +1,5 @@
+__pycache__
+tmp_trainer/
+*.out
+*.sh
+*.csv
