@@ -3,5 +3,5 @@ tmp_trainer/
 *.out
 *.sh
 *.csv
-~/
+models/
 secret
