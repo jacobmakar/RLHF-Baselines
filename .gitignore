@@ -3,5 +3,6 @@ tmp_trainer/
 *.out
 *.sh
 *.csv
+.vscode
 models/
 secret
