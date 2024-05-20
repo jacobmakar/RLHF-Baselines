@@ -1,11 +1,10 @@
 from transformers import GPT2Tokenizer, OPTForCausalLM
 from nltk.tokenize import word_tokenize
 import torch
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
+from utils import PromptDataset
 from datasets import load_dataset
 from itertools import combinations
-import csv
-import json
 
 MODEL_DIR = "facebook/opt-125m"
 
