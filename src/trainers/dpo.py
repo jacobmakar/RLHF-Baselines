@@ -1,7 +1,7 @@
 import torch 
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from src.utils import evaluate
+from utils import evaluate
 import numpy as np 
 import random 
 import wandb
