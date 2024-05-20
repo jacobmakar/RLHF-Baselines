@@ -93,6 +93,7 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
             # Reward Calculation
             prompts_encoded = tokenizer(eval_batch['text'], return_tensors="pt", max_length=prompt_len, padding=True, truncation=True).to(model_device)
             prompts_encoded = {k: v.to(model_device) for k, v in prompts_encoded.items()} # devices[0]
+            prompts = [tokenizer.decode(prompt) for prompt in prompts_encoded['input_ids']]
             output_sequences = model.generate(
                 input_ids=prompts_encoded['input_ids'],
                 max_length=sequence_len,
@@ -105,7 +106,6 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
             avg_rewards = np.mean(list(starmap(reward_func, zip(prompts, completions))))
             total_reward += avg_rewards
 
-        prompts = [tokenizer.decode(prompt) for prompt in prompts_encoded['input_ids']]
         policy_text_table = wandb.Table(columns=["prompt", "sample"])
         for prompt, sample in zip(prompts, completions):
             policy_text_table.add_data(prompt, sample)   
