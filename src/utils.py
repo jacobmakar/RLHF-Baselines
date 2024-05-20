@@ -3,11 +3,24 @@ import wandb
 import numpy as np 
 import pandas as pd
 import torch.nn.functional as F
+import torch.nn as nn
 from torch.utils.data import Dataset
 from nltk import word_tokenize, pos_tag
 from datasets import load_dataset
 from itertools import starmap
 
+
+class Critic(nn.Module):
+    def __init__(self, model_output_size, hidden_size):
+        super(Critic, self).__init__()
+        self.fc1 = nn.Linear(model_output_size, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, 1)
+        
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
 class PromptDataset(Dataset):
     def __init__(self, prompts):
         self.prompts = prompts
