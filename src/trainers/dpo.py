@@ -95,7 +95,7 @@ class DPOTrainer():
         count = 0
         for batch in train_loader: 
             #### EVAL LOOP ####
-            if count != 0 and count % 5 == 0:
+            if count != 0 and count % 10 == 0:
                 avg_kl, avg_reward, policy_text_table = evaluate(test_loader=test_loader, 
                                                                  sequence_len=self.sequence_len, 
                                                                  prompt_len=self.prompt_len, 
