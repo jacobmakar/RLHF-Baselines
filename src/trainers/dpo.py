@@ -65,15 +65,6 @@ class DPOTrainer():
        
         return losses.mean(), chosen_rewards, rejected_rewards
 
-    def compute_log_probs(self, logits, labels, prompt_len):
-        # TODO I have hard-coded a fixed-prompt length to ignore, but this only holds in the imdb exmaple 
-        labels = labels[:, prompt_len + 1:].clone()
-        logits = logits[:, prompt_len:-1, :] 
-        loss_mask = (labels != self.tokenizer.pad_token_id)
-
-        per_token_logps = torch.gather(logits.log_softmax(-1), dim=2, index=labels.unsqueeze(2)).squeeze(2)
-        return (per_token_logps * loss_mask).sum(-1)
-
     def compute_kl_divergence(self, pi_logits, ref_logits, prompts_encoded):
         pi_log_probs = self.compute_log_probs(pi_logits, prompts_encoded['input_ids'], 0)
         ref_log_probs = self.compute_log_probs(ref_logits, prompts_encoded['input_ids'], 0)
