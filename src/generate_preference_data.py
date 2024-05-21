@@ -1,8 +1,7 @@
 from transformers import GPT2Tokenizer, OPTForCausalLM
-from nltk.tokenize import word_tokenize
 import torch
 from torch.utils.data import DataLoader
-from utils import PromptDataset
+from utils import PromptDataset, score_nouns
 from datasets import load_dataset
 from itertools import combinations
 
@@ -21,55 +20,48 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.eval()
 model.to(device)
 
+num_return_sequences=4
+prompt_len=16
+sequence_len=68
+
+
 results = [] 
 count = 0
 for batch in dataloader:
     print(f'Processing batch {count + 1}')
     # Tokenize prompt and truncate to 16 tokens
-    inputs = tokenizer(batch['text'], return_tensors="pt", max_length=16, truncation=True, padding=True)
+    inputs = tokenizer(batch['text'], return_tensors="pt", max_length=prompt_len, truncation=True, padding=True)
     prompts = inputs['input_ids']
     prompts = [tokenizer.decode(prompt) for prompt in prompts]
     # Move input prompts to model device and sample 4 completions
     inputs = {k: v.to(device) for k, v in inputs.items()}
     output_sequences = model.generate(
         input_ids=inputs['input_ids'],
-        max_length=68,
-        num_return_sequences=4,
+        max_length=sequence_len,
+        num_return_sequences=num_return_sequences,
         do_sample=True, 
         pad_token_id=tokenizer.eos_token_id,
     )
     # Decode completions, and get scores
-    completions = [tokenizer.decode(output_sequence, skip_special_tokens=True) for output_sequence in output_sequences]
-    scores = list(map(score, completions))
+    output_sequences = output_sequences.view(batch_size, num_return_sequences, sequence_len)
+    completions_by_prompt = [[tokenizer.decode(output_sequence[prompt_len:], skip_special_tokens=True) for output_sequence in responses] for responses in output_sequences]
+    rewards_by_prompt = [list(map(lambda c: score_nouns(prompt, c), completions)) for prompt, completions in zip(prompts, completions_by_prompt)]
 
     rewards = dict()
-    current_completions = [] # We are batching prompts and there are 4 completions per prompt
-    for i, completion in enumerate(completions):
-        rewards[completion] = scores[i]
-        current_completions.append(completion)
-        if i % 4 == 3:
-            prompt = prompts[i // 4]
-            for y1, y2 in combinations(current_completions, 2):
-                if rewards[y2] < rewards[y1]:
-                    y1, y2 = y2, y1 
-                results.append((prompt, y1, y2, rewards[y1], rewards[y2])) # Output is prompt, loser, winner, loser_reward, winner_reward
-            current_completions = []
-    count += 1 
 
-# # Write data to JSON (just in case)
+    for i, completions in enumerate(completions_by_prompt):
+        rewards = rewards_by_prompt[i]
+        prompt = prompts[i]
+        w = completions[np.argmax(rewards)]
+        l = completions[np.argmin(rewards)]
+        results.append(prompt, l, w)
 
-#out_file = open("imdb_preferences.json", "w") 
+#Write data to CSV
+csv_filename = "nouns_preferences.csv"
+with open(csv_filename, mode='w', newline='', encoding='utf-8') as file:
+    writer = csv.writer(file)
+    writer.writerow(["Prompt", "Losing Continuation", "Winning Continuation"])
+    for result in results:
+        writer.writerow(result)
 
-#json.dump(results, out_file) 
-
-#out_file.close() 
-
-# Write data to CSV
-# csv_filename = "imdb_preferences_gpt2_large.csv"
-# with open(csv_filename, mode='w', newline='', encoding='utf-8') as file:
-#     writer = csv.writer(file)
-#     writer.writerow(["Prompt", "Losing Continuation", "Winning Continuation", "Losing Reward", "Winning Reward"])
-#     for result in results:
-#         writer.writerow(result)
-
-# print(f"Results save to {csv_filename}")
+print(f"Results saved to {csv_filename}")
