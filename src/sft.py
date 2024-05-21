@@ -2,6 +2,8 @@ from datasets import load_dataset, Dataset
 from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 from data import get_imdb
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from utils import load_num2word
+import pandas as pd 
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -43,6 +45,30 @@ elif args.data == "custom_imdb":
         model,
         train_dataset=dataset,
         max_seq_length=512,
+        formatting_func=format,
+        data_collator=collator,
+	    args=train_args,
+    )
+elif args.data == "num2word":
+
+    model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m")
+    tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
+
+    df = pd.read_csv('num2word_data.csv')
+    dataset_dicts = [{'prompt': row['prompt'], 'target': row['target']} for _, row in df.iterrows()]
+    dataset = Dataset.from_list(dataset_dicts)
+
+    response_template = ""
+
+    def format(batch):
+        return [prompt + response_template + target for prompt, target in zip(batch['prompt'], batch['target'])]
+
+    collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
+
+    trainer = SFTTrainer(
+        model,
+        train_dataset=dataset,
+        max_seq_length=100,
         formatting_func=format,
         data_collator=collator,
 	    args=train_args,
