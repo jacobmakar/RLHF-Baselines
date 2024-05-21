@@ -52,21 +52,21 @@ elif args.data == "custom_imdb":
 elif args.data == "num2word":
 
     df = pd.read_csv('num2word_data.csv')
-    dataset_dicts = [{'prompt': row['prompt'], 'target': row['target']} for _, row in df.iterrows()]
+    dataset_dicts = [{'text': row['prompt'] + ' ' + row['target']} for _, row in df.iterrows()]
     dataset = Dataset.from_list(dataset_dicts)
 
-    response_template = ""
+    # response_template = ""
 
-    def format(batch):
-        return [prompt + response_template + target for prompt, target in zip(batch['prompt'], batch['target'])]
+    # def format(batch):
+    #     return [prompt + response_template + target for prompt, target in zip(batch['prompt'], batch['target'])]
 
-    collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
+    # collator = DataCollatorForCompletionOnlyLM(response_template, tokenizer=tokenizer)
 
     trainer = SFTTrainer(
         model,
         train_dataset=dataset,
         max_seq_length=100,
-        formatting_func=format,
+        dataset_text_field='text',
         data_collator=collator,
 	    args=train_args,
     )

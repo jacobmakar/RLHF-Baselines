@@ -7,3 +7,4 @@ tmp_trainer/
 .vscode
 models/
 secret
+wandb/
