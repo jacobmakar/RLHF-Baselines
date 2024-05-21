@@ -1,6 +1,6 @@
 from datasets import load_dataset, Dataset
 from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
-from data import get_imdb
+#from data import get_imdb
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from utils import load_num2word
 import pandas as pd 
@@ -11,8 +11,8 @@ parser.add_argument("--run_name", type=str, required=True)
 parser.add_argument("--data", type=str, required=True)
 args = parser.parse_args()
 
-model = AutoModelForCausalLM.from_pretrained("gpt2-large")
-tokenizer = AutoTokenizer.from_pretrained("gpt2-large")
+model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m")
+tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 tokenizer.pad_token = tokenizer.eos_token
 output = f"~/scratch/{args.run_name}"
 
@@ -50,9 +50,6 @@ elif args.data == "custom_imdb":
 	    args=train_args,
     )
 elif args.data == "num2word":
-
-    model = AutoModelForCausalLM.from_pretrained("facebook/opt-125m")
-    tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 
     df = pd.read_csv('num2word_data.csv')
     dataset_dicts = [{'prompt': row['prompt'], 'target': row['target']} for _, row in df.iterrows()]
