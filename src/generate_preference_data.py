@@ -66,7 +66,7 @@ def main(task, num_return_sequences, prompt_len, sequence_len, batch_size):
             w = completions[np.argmax(rewards)]
             l = completions[np.argmin(rewards)]
             results.append((prompt, l, w))
-
+        count += 1
     # Write data to CSV
     csv_filename = f"{task}_preferences.csv"
     with open(csv_filename, mode='w', newline='', encoding='utf-8') as file:
