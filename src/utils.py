@@ -92,7 +92,8 @@ def score_nouns(prompt, response, pstr="NN"):
     return len([word for word, pos in tagged if pos.startswith(pstr)])
 
 def score_num_translate(prompt, response):
-    target = num2words(prompt)
+    new = prompt.split(':')[-1].strip()
+    target = num2words(new)
     return -editdistance.eval(target, response)
 
 def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, model, ref_model, model_device):
@@ -112,7 +113,7 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
             # Reward Calculation
             prompts_encoded = tokenizer(eval_batch['text'], return_tensors="pt", max_length=prompt_len, padding=True, truncation=True).to(model_device)
             prompts_encoded = {k: v.to(model_device) for k, v in prompts_encoded.items()} # devices[0]
-            prompts = [tokenizer.decode(prompt) for prompt in prompts_encoded['input_ids']]
+            prompts = [tokenizer.decode(prompt, skip_special_tokens=True) for prompt in prompts_encoded['input_ids']]
             output_sequences = model.generate(
                 input_ids=prompts_encoded['input_ids'],
                 max_length=sequence_len,
@@ -156,6 +157,6 @@ def load_ultrachat():
     return train_df['text'].tolist(), test_df['text'].tolist()
 
 def load_num2word():
-    df = pd.read_csv('num2word_data.csv')
+    df = pd.read_csv('num2word_data_42.csv')
     prompts = df['prompt']
     return prompts[:32000], prompts[32000:32160]
