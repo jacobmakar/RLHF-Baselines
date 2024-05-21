@@ -3,7 +3,8 @@ import torch
 from torch.utils.data import DataLoader
 from utils import PromptDataset, score_nouns
 from datasets import load_dataset
-from itertools import combinations
+import csv 
+import numpy as np 
 
 MODEL_DIR = "facebook/opt-125m"
 
@@ -11,10 +12,6 @@ model = OPTForCausalLM.from_pretrained(MODEL_DIR)
 tokenizer = GPT2Tokenizer.from_pretrained(MODEL_DIR)
 tokenizer.pad_token = tokenizer.eos_token
 
-dataset = load_dataset("openbmb/UltraFeedback", split="train") 
-instructions = dataset['instruction']
-train_dataset = PromptDataset(instructions[1013:33013])
-dataloader = DataLoader(train_dataset, batch_size=64)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model.eval()
@@ -23,6 +20,14 @@ model.to(device)
 num_return_sequences=4
 prompt_len=16
 sequence_len=68
+batch_size = 64
+
+
+dataset = load_dataset("openbmb/UltraFeedback", split="train") 
+instructions = dataset['instruction']
+train_dataset = PromptDataset(instructions[1013:33013])
+dataloader = DataLoader(train_dataset, batch_size=batch_size)
+
 
 
 results = [] 
