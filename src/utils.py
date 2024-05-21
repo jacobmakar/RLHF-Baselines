@@ -154,3 +154,8 @@ def load_ultrachat():
     train_df = pd.read_csv('train_ultrachat.csv')
     test_df = pd.read_csv('test_ultrachat.csv')
     return train_df['text'].tolist(), test_df['text'].tolist()
+
+def load_num2word():
+    df = pd.read_csv('num2word_data.csv')
+    prompts = train_df['prompt']
+    return prompts[:32000], prompts[32000:32160]
