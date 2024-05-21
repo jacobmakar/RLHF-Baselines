@@ -5,7 +5,7 @@ from utils import evaluate
 import numpy as np 
 import random 
 import wandb
-from train_utils import compute_log_probs
+from trainers.train_utils import compute_log_probs
 
 def collate(batch):
     batched_data = {
@@ -70,7 +70,7 @@ class DPOTrainer():
         np.random.seed(self.seed)
         random.seed(self.seed)
         train_loader = DataLoader(self.train_data, batch_size=batch_size, shuffle=True, collate_fn=collate)
-        self.test_data = self.test_data.select(range(self.num_test_batches * batch_size))
+        #self.test_data = self.test_data.select(range(self.num_test_batches * batch_size))
         test_loader = DataLoader(self.test_data, batch_size=batch_size)
 
         self.ref_model.eval()
