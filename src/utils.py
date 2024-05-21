@@ -157,5 +157,5 @@ def load_ultrachat():
 
 def load_num2word():
     df = pd.read_csv('num2word_data.csv')
-    prompts = train_df['prompt']
+    prompts = df['prompt']
     return prompts[:32000], prompts[32000:32160]
