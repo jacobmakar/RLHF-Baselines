@@ -5,7 +5,7 @@ from utils import evaluate
 import numpy as np 
 import random 
 import wandb
-
+from train_utils import compute_log_probs
 
 def collate(batch):
     batched_data = {
@@ -64,13 +64,6 @@ class DPOTrainer():
         rejected_rewards = beta * (pi_logps_l - ref_logps_l).detach()
        
         return losses.mean(), chosen_rewards, rejected_rewards
-
-    def compute_kl_divergence(self, pi_logits, ref_logits, prompts_encoded):
-        pi_log_probs = self.compute_log_probs(pi_logits, prompts_encoded['input_ids'], 0)
-        ref_log_probs = self.compute_log_probs(ref_logits, prompts_encoded['input_ids'], 0)
-        diff = (pi_log_probs - ref_log_probs)
-        kl_div = pi_log_probs.exp() * diff
-        return kl_div.sum(-1).mean(), diff.sum(-1).mean()
             
     def train(self, batch_size, num_batches):                
         torch.manual_seed(self.seed)
@@ -118,13 +111,13 @@ class DPOTrainer():
             with torch.no_grad():
                 ref_logits_good = self.ref_model(**good_sequences_encoded).logits 
                 ref_logits_bad = self.ref_model(**bad_sequences_encoded).logits 
-                ref_log_probs_good = self.compute_log_probs(ref_logits_good, good_sequences_encoded['input_ids'], self.prompt_len)
-                ref_log_probs_bad =  self.compute_log_probs(ref_logits_bad, bad_sequences_encoded['input_ids'], self.prompt_len)
+                ref_log_probs_good = compute_log_probs(ref_logits_good, good_sequences_encoded['input_ids'], self.prompt_len, self.tokenizer.pad_token_id)
+                ref_log_probs_bad =  compute_log_probs(ref_logits_bad, bad_sequences_encoded['input_ids'], self.prompt_len, self.tokenizer.pad_token_id)
 
             pi_logits_good = self.model(**good_sequences_encoded).logits 
             pi_logits_bad = self.model(**bad_sequences_encoded).logits 
-            pi_log_probs_good =  self.compute_log_probs(pi_logits_good, good_sequences_encoded['input_ids'], self.prompt_len)
-            pi_log_probs_bad = self.compute_log_probs(pi_logits_bad, bad_sequences_encoded['input_ids'], self.prompt_len)
+            pi_log_probs_good = compute_log_probs(pi_logits_good, good_sequences_encoded['input_ids'], self.prompt_len, self.tokenizer.pad_token_id)
+            pi_log_probs_bad = compute_log_probs(pi_logits_bad, bad_sequences_encoded['input_ids'], self.prompt_len, self.tokenizer.pad_token_id)
 
             loss, chosen_rewards, rejected_rewards = self.loss(pi_log_probs_good, pi_log_probs_bad, ref_log_probs_good, ref_log_probs_bad, self.beta)
             mean_chosen_reward, mean_rejected_reward = chosen_rewards.mean(), rejected_rewards.mean()
