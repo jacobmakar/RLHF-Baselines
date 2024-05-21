@@ -1,5 +1,6 @@
 import torch 
 import wandb 
+import editdistance
 import numpy as np 
 import pandas as pd
 import torch.nn.functional as F
@@ -8,6 +9,7 @@ from torch.utils.data import Dataset
 from nltk import word_tokenize, pos_tag
 from datasets import load_dataset
 from itertools import starmap
+from num2words import num2words
 
 
 class Critic(nn.Module):
@@ -88,6 +90,10 @@ def score_nouns(prompt, response, pstr="NN"):
     tagged = pos_tag(tokens)
     
     return len([word for word, pos in tagged if pos.startswith(pstr)])
+
+def score_num_translate(prompt, response):
+    target = num2words(prompt)
+    return -editdistance.eval(target, response)
 
 def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, model, ref_model, model_device):
     model.eval()
