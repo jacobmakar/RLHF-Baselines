@@ -26,8 +26,7 @@ class DPOTrainer():
             model,
             tokenizer,
             ref_model,
-            reward_model,
-            reward_tokenizer,
+            reward_func,
             optimizer,
             beta,
             train_dataset,
@@ -41,9 +40,8 @@ class DPOTrainer():
     ):
         self.model = model
         self.ref_model = ref_model 
-        self.reward_model = reward_model
+        self.reward_func = reward_func
         self.tokenizer = tokenizer
-        self.reward_tokenizer = reward_tokenizer
         self.beta = beta 
         self.train_data = train_dataset
         self.test_data = test_dataset
