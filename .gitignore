@@ -4,6 +4,7 @@ tmp_trainer/
 *.sh
 *.csv
 *.png
+*.pdf
 .vscode
 models/
 secret
