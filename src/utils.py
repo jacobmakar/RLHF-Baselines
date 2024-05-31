@@ -89,7 +89,7 @@ def score_nouns(prompt, response, pstr="NN"):
     tokens = word_tokenize(response)
     tagged = pos_tag(tokens)
     
-    return len([word for word, pos in tagged if pos.startswith(pstr)])
+    return len(set([word for word, pos in tagged if pos.startswith(pstr)]))
 
 def score_num_translate(prompt, response):
     new = prompt.split(':')[-1].strip()
