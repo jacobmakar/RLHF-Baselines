@@ -121,7 +121,8 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
                 do_sample=True, 
                 pad_token_id=tokenizer.eos_token_id,
             )
-            completions = [tokenizer.decode(output_sequence, skip_special_tokens=True) for output_sequence in output_sequences[:, prompt_len:]]
+            completions = [tokenizer.decode(output_sequence, skip_special_tokens=True) for output_sequence in output_sequences]
+            completions = [c[len(p):]  for c, p in zip(completions, prompts)]
 
             avg_rewards = np.mean(list(starmap(reward_func, zip(prompts, completions))))
             total_reward += avg_rewards
