@@ -114,7 +114,8 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
             prompts_encoded = tokenizer(eval_batch['text'], return_tensors="pt", max_length=prompt_len, padding=True, truncation=True).to(model_device)
             prompts_encoded = {k: v.to(model_device) for k, v in prompts_encoded.items()} # devices[0]
             prompts = [tokenizer.decode(prompt, skip_special_tokens=True) for prompt in prompts_encoded['input_ids']]
-            output_sequences = model.generate(
+            model_to_use = model.module if isinstance(model, torch.nn.DataParallel) else model
+            output_sequences = model_to_use.generate(
                 input_ids=prompts_encoded['input_ids'],
                 max_length=sequence_len,
                 num_return_sequences=1,
