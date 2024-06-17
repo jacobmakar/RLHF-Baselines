@@ -16,7 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained("facebook/opt-125m")
 tokenizer.pad_token = tokenizer.eos_token
 output = f"models/scratch/{args.run_name}"
 
-train_args = TrainingArguments(output)
+train_args = TrainingArguments(output, report_to=None, save_strategy="no")
 
 
 if args.data == "imdb":
