@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from collections import defaultdict
 from optimizers import ExtraAdam
+from utils import evaluate
 
 def compute_log_probs(logits, labels, prompt_len, pad_token_id):
     labels = labels[:, prompt_len + 1:].clone()
@@ -61,9 +62,27 @@ def train_main_model(trainer, batch_size, num_batches):
     trainer.model.train()
     
     train_loader = DataLoader(trainer.train_data, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(trainer.test_data, batch_size=batch_size)
     count = 0
     
     for batch in train_loader:
+        if count != 0 and count % 10 == 0:
+            avg_kl, avg_reward, policy_text_table = evaluate(test_loader=test_loader, 
+                                                                sequence_len=trainer.sequence_len, 
+                                                                prompt_len=trainer.prompt_len, 
+                                                                reward_func=trainer.reward_func, 
+                                                                tokenizer=trainer.tokenizer,
+                                                                model=trainer.model, 
+                                                                ref_model=trainer.ref_model, 
+                                                                model_device=trainer.devices[0])
+            wandb.log({
+            "eval_frozen_pref/avg_kl": avg_kl,
+            "eval_frozen_pref/avg_reward": avg_reward,
+            "eval_frozen_pref/examples": count * batch_size,
+            f"policy_samples_step_{count // 5}": policy_text_table,
+            })
+            print(f"Iteration {count}, KL Divergence: {avg_kl:.4f}, Average Reward {avg_reward:.4f}")
+        
         if num_batches and count == num_batches:
             break 
         count += 1
