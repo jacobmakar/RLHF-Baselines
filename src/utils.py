@@ -142,21 +142,25 @@ def evaluate(test_loader, sequence_len, prompt_len, reward_func, tokenizer, mode
 def preprocess_and_save_ultrachat():
     dataset = load_dataset("stingning/ultrachat", split="train")
     data = dataset['data']
-    train_data = list(map(lambda i: i[0], data[1013:33013]))
-    test_data = list(map(lambda i: i[0], data[13:173]))
+    train_data = list(map(lambda i: i[0], data[:32000]))
+    test_data = list(map(lambda i: i[0], data[32000:32160]))
+    extra_data =  list(map(lambda i: i[0], data[32160:35360]))
 
     # Convert to DataFrame and save as CSV
     train_df = pd.DataFrame(train_data, columns=['text'])
     test_df = pd.DataFrame(test_data, columns=['text'])
+    extra_df = pd.DataFrame(extra_data, columns=['text'])
     train_df.to_csv('train_ultrachat.csv', index=False)
     test_df.to_csv('test_ultrachat.csv', index=False)
+    extra_df.to_csv('extra_ultrachat.csv', index=False)
 
-    return train_data, test_data
+    return train_data, test_data, extra_data
 
 def load_ultrachat():
     train_df = pd.read_csv('train_ultrachat.csv')
     test_df = pd.read_csv('test_ultrachat.csv')
-    return train_df['text'].tolist(), test_df['text'].tolist()
+    extra_df = pd.read_csv('extra_ultrachat.csv')
+    return train_df['text'].tolist(), test_df['text'].tolist(), extra_df['text'].tolist()
 
 def load_num2word():
     df = pd.read_csv('num2word_data_42.csv')
