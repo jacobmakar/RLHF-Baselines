@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from collections import defaultdict
 from optimizers import ExtraAdam
 from utils import evaluate
+import numpy as np
 
 def compute_log_probs(logits, labels, prompt_len, pad_token_id):
     labels = labels[:, prompt_len + 1:].clone()
