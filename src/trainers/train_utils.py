@@ -22,10 +22,11 @@ def concat_sequences(seq1, seq2, seq_len):
         return input_ids, attention_mask
 
 
-def preference_loss(model, input_ids, attention_mask, return_outputs=False):
-    rewards = model(
-        input_ids=input_ids, attention_mask=attention_mask
-    )[0]
+def preference_loss(model, input_ids, attention_mask, return_outputs=False, rewards = None):
+    if rewards is None:
+        rewards = model(
+            input_ids=input_ids, attention_mask=attention_mask
+        )[0]
     batch_size = input_ids.size(0) // 2 
     rewards_chosen, rewards_rejected= torch.split(rewards, [batch_size, batch_size], dim=0)
     loss = -torch.nn.functional.logsigmoid(rewards_chosen - rewards_rejected).mean()
@@ -33,14 +34,14 @@ def preference_loss(model, input_ids, attention_mask, return_outputs=False):
         return loss, {"rewards_chosen": rewards_chosen, "rewards_rejected": rewards_rejected}
     return loss
 
-def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id):
+def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id, model_logits=None, model_log_probs=None):
     with torch.no_grad():
         ref_logits = reference_model(input_ids=input_ids, attention_mask=attention_mask).logits
 
-    model_logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
 
-
-    model_log_probs = compute_log_probs(model_logits, labels, prompt_len, pad_token_id)
+    if model_log_probs is None or model_logits is None:
+        model_logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
+        model_log_probs = compute_log_probs(model_logits, labels, prompt_len, pad_token_id)
 
     # Compute the preference scores, multiply them with the log_probs, and add KL-term
     kl = F.kl_div(F.log_softmax(model_logits, dim=-1), F.softmax(ref_logits, dim=-1), reduction='batchmean', log_target=False)
