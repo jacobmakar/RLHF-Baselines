@@ -26,7 +26,7 @@ def preference_loss(model, input_ids, attention_mask, return_outputs=False, rewa
     if rewards is None:
         rewards = model(
             input_ids=input_ids, attention_mask=attention_mask
-        )[0]
+        )
     batch_size = input_ids.size(0) // 2 
     rewards_chosen, rewards_rejected = torch.split(rewards, [batch_size, batch_size], dim=0)
     loss = -torch.nn.functional.logsigmoid(rewards_chosen - rewards_rejected)
