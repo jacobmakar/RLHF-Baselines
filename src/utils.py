@@ -23,12 +23,12 @@ class RewardModel(nn.Module):
         last_token_hidden = last_hidden_state[torch.arange(last_hidden_state.shape[0]), attention_mask.sum(dim=1) - 1]
         score = self.score_head(last_token_hidden)
         return score
-        
+
     def parameters(self):
         return self.score_head.parameters()
 
 def initialize_reward_model(model):
-    reward_model = SharedBaseRewardModel(model)
+    reward_model = RewardModel(model)
     return reward_model
 
 class Critic(nn.Module):
