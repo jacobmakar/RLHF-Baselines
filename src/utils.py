@@ -11,6 +11,27 @@ from datasets import load_dataset
 from itertools import starmap
 from num2words import num2words
 
+class GPT2RewardModel(nn.Module):
+    def __init__(self, base_model):
+        super().__init__()
+        self.base_model = base_model
+        self.score_head = nn.Linear(base_model.config.n_embd, 1)
+        
+    def forward(self, input_ids, attention_mask):
+        outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
+        
+        last_hidden_state = outputs.last_hidden_state
+        embeddings = outputs.hidden_states[0]  # Initial embeddings
+        
+        # Use the last token's representation from the last hidden state for scoring
+        last_token_hidden = last_hidden_state[torch.arange(last_hidden_state.shape[0]), attention_mask.sum(dim=1) - 1]
+        score = self.score_head(last_token_hidden)
+        
+        return score, last_hidden_state, embeddings
+
+def initialize_reward_model(base_model, device):
+    reward_model = GPT2RewardModel(base_model).to(device)
+    return reward_model
 
 class Critic(nn.Module):
     def __init__(self, model_output_size, hidden_size):
