@@ -25,9 +25,9 @@ def concat_sequences(seq1, seq2, seq_len):
 def preference_loss(model, input_ids, attention_mask, return_outputs=False):
     rewards = model(
         input_ids=input_ids, attention_mask=attention_mask
-    )[0]
+    )
     batch_size = input_ids.size(0) // 2 
-    rewards_chosen, rewards_rejected= torch.split(rewards, [batch_size, batch_size], dim=0)
+    rewards_chosen, rewards_rejected = torch.split(rewards, [batch_size, batch_size], dim=0)
     loss = -torch.nn.functional.logsigmoid(rewards_chosen - rewards_rejected).mean()
     if return_outputs:
         return loss, {"rewards_chosen": rewards_chosen, "rewards_rejected": rewards_rejected}
