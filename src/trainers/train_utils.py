@@ -25,7 +25,7 @@ def concat_sequences(seq1, seq2, seq_len):
 def preference_loss(model, input_ids, attention_mask, return_outputs=False):
     rewards = model(
         input_ids=input_ids, attention_mask=attention_mask
-    )
+    )[0]
     batch_size = input_ids.size(0) // 2 
     rewards_chosen, rewards_rejected = torch.split(rewards, [batch_size, batch_size], dim=0)
     loss = -torch.nn.functional.logsigmoid(rewards_chosen - rewards_rejected).mean()
@@ -33,7 +33,7 @@ def preference_loss(model, input_ids, attention_mask, return_outputs=False):
         return loss, {"rewards_chosen": rewards_chosen, "rewards_rejected": rewards_rejected}
     return loss
 
-def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id):
+def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id, use_baseline=False):
     with torch.no_grad():
         ref_logits = reference_model(input_ids=input_ids, attention_mask=attention_mask).logits
 
@@ -44,7 +44,10 @@ def policy_loss(model, input_ids, attention_mask, labels, preference_scores, ref
 
     # Compute the preference scores, multiply them with the log_probs, and add KL-term
     kl = F.kl_div(F.log_softmax(model_logits, dim=-1), F.softmax(ref_logits, dim=-1), reduction='batchmean', log_target=False)
-    loss = preference_scores.view(model_log_probs.shape[0]) * model_log_probs - beta * kl
+    advantages = preference_scores.view(model_log_probs.shape[0])
+    if use_baseline:
+        advantages = advantages - preference_scores.mean()
+    loss = advantages * model_log_probs - beta * kl
     return -loss, kl
 
 
