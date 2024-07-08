@@ -22,7 +22,7 @@ class RewardModel(nn.Module):
         last_hidden_state = outputs.hidden_states[-1]
         last_token_hidden = last_hidden_state[torch.arange(last_hidden_state.shape[0]), attention_mask.sum(dim=1) - 1]
         score = self.score_head(last_token_hidden)
-        return score
+        return (score,)
 
     def parameters(self):
         return self.score_head.parameters()
