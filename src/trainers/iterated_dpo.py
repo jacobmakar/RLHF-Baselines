@@ -138,6 +138,8 @@ class IteratedDPOTrainer():
             correct_predictions = predictions.sum().item()
             accuracy = correct_predictions / batch_size
 
+            loss.backward()
+
             params = torch.nn.utils.parameters_to_vector(self.model.parameters())
             grads = torch.nn.utils.parameters_to_vector(p.grad for p in self.model.parameters() if p.grad is not None)
 
@@ -155,8 +157,7 @@ class IteratedDPOTrainer():
                 "train/iteration": count,
                 "train/examples": len(train_loader) * batch_size + count * batch_size,
             })
-            
-            loss.backward()
+                    
             self.optimizer.step()
             self.optimizer.zero_grad()
             print(f"Iteration {count}, Loss: {loss.item():.4f}, Mean Chosen Reward {mean_chosen_reward.item():.4f}, Mean Rejected Reward {mean_rejected_reward.item():.4f}")
