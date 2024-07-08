@@ -22,6 +22,7 @@ class IteratedDPOTrainer():
             num_test_batches,
             prompt_len,
             sequence_len, 
+            num_return_sequences,
             seed,
             devices,
 
@@ -37,6 +38,7 @@ class IteratedDPOTrainer():
         self.prompt_len = prompt_len
         self.optimizer = optimizer 
         self.sequence_len = sequence_len
+        self.num_return_sequences = num_return_sequences
         self.seed = seed
         self.devices = devices
 
