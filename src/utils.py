@@ -8,28 +8,35 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from nltk import word_tokenize, pos_tag
 from datasets import load_dataset
-from itertools import starmap
+from itertools import starmap, chain
 from num2words import num2words
 
 class RewardModel(nn.Module):
-    def __init__(self, base_model, device):
+    def __init__(self, base_model, device, model_type):
         super().__init__()
-        self.base_model = base_model
+        if isinstance(base_model, OPTForCausalLM):
+            self.base_model = base_model.model.to(device)
+        elif isinstance(base_model, GPT2LMHeadModel):
+            self.base_model = base_model.transformer.to(device)
+        else:
+            raise ValueError("Unsupported model type. Please use OPTForCausalLM or GPT2LMHeadModel.")
         self.score_head = nn.Linear(base_model.config.hidden_size, 1, bias=False).to(device)
+        self.model_type = model_type
         
     def forward(self, input_ids, attention_mask):
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
         last_hidden_state = outputs.hidden_states[-1]
         last_token_hidden = last_hidden_state[torch.arange(last_hidden_state.shape[0]), attention_mask.sum(dim=1) - 1]
         score = self.score_head(last_token_hidden)
-        return score
+        return (score,)
 
     def parameters(self):
+        if self.model_type == 'full':
+            return chain(self.base_model.parameters(), self.score_head.parameters())
         return self.score_head.parameters()
 
-def initialize_reward_model(model, device):
-    reward_model = RewardModel(model, device)
-    return reward_model
+def initialize_reward_model(model, device, model_type):
+    return  RewardModel(model, device, model_type)
 
 class Critic(nn.Module):
     def __init__(self, model_output_size, hidden_size):
