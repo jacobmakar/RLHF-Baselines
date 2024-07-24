@@ -34,7 +34,7 @@ def preference_loss(model, input_ids, attention_mask, return_outputs=False, rewa
         return loss, {"rewards_chosen": rewards_chosen, "rewards_rejected": rewards_rejected}
     return loss
 
-def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id, model_logits=None, model_log_probs=None):
+def policy_loss(model, input_ids, attention_mask, labels, preference_scores, reference_model, beta, prompt_len, pad_token_id, model_logits=None, model_log_probs=None, use_baseline=False):
     with torch.no_grad():
         ref_logits = reference_model(input_ids=input_ids, attention_mask=attention_mask).logits
 
