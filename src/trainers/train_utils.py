@@ -45,7 +45,10 @@ def policy_loss(model, input_ids, attention_mask, labels, preference_scores, ref
 
     # Compute the preference scores, multiply them with the log_probs, and add KL-term
     kl = F.kl_div(F.log_softmax(model_logits, dim=-1), F.softmax(ref_logits, dim=-1), reduction='batchmean', log_target=False)
-    loss = preference_scores.view(model_log_probs.shape[0]) * model_log_probs - beta * kl
+    advantages = preference_scores.view(model_log_probs.shape[0])
+    if use_baseline:
+        advantages = advantages - preference_scores.mean()
+    loss = advantages * model_log_probs - beta * kl
     return -loss, kl
 
 

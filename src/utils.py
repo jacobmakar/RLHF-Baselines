@@ -10,6 +10,7 @@ from nltk import word_tokenize, pos_tag
 from datasets import load_dataset
 from itertools import starmap, chain
 from num2words import num2words
+from transformers import OPTForCausalLM, GPT2LMHeadModel
 
 class RewardModel(nn.Module):
     def __init__(self, base_model, device, model_type):
@@ -36,7 +37,7 @@ class RewardModel(nn.Module):
         return self.score_head.parameters()
 
 def initialize_reward_model(model, device, model_type):
-    return  RewardModel(model, device, model_type)
+    return RewardModel(model, device, model_type)
 
 class Critic(nn.Module):
     def __init__(self, model_output_size, hidden_size):
