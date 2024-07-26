@@ -140,11 +140,11 @@ class IteratedDPOTrainer():
 
             loss.backward()
 
-            params = torch.nn.utils.parameters_to_vector(self.model.parameters())
-            grads = torch.nn.utils.parameters_to_vector(p.grad for p in self.model.parameters() if p.grad is not None)
+            #params = torch.nn.utils.parameters_to_vector(self.model.parameters())
+            #grads = torch.nn.utils.parameters_to_vector(p.grad for p in self.model.parameters() if p.grad is not None)
 
-            param_norm = torch.norm(params, 2).item()
-            grad_norm = torch.norm(grads, 2).item()
+            #param_norm = torch.norm(params, 2).item()
+            #grad_norm = torch.norm(grads, 2).item()
             
             wandb.log({
                 "train/loss": loss.item(),
@@ -152,8 +152,6 @@ class IteratedDPOTrainer():
                 "train/rejected_reward": mean_rejected_reward,
                 "train/accuracy": accuracy,
                 "train/margins": mean_chosen_reward - mean_rejected_reward,
-                "train/param_norm": param_norm, 
-                "train/grad_norm": grad_norm,
                 "train/iteration": count,
                 "train/examples": len(train_loader) * batch_size + count * batch_size,
             })
