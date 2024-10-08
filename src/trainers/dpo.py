@@ -31,7 +31,6 @@ class DPOTrainer():
             beta,
             train_dataset,
             test_dataset,
-            num_test_batches,
             prompt_len,
             sequence_len, 
             seed,
@@ -68,7 +67,6 @@ class DPOTrainer():
         np.random.seed(self.seed)
         random.seed(self.seed)
         train_loader = DataLoader(self.train_data, batch_size=batch_size, shuffle=True, collate_fn=collate)
-        #self.test_data = self.test_data.select(range(self.num_test_batches * batch_size))
         test_loader = DataLoader(self.test_data, batch_size=batch_size)
 
         self.ref_model.eval()
