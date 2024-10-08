@@ -11,7 +11,7 @@ from datasets import load_dataset
 from trainers.stackelberg import StackelbergTrainer
 from trainers.parl import PARLTrainer
 from trainers.dpo import DPOTrainer
-from trainers.idpo import IteratedDPOTrainer
+from trainers.iterated_dpo import IteratedDPOTrainer
 from trainers.rlhf import RLHFTrainer
 from trainers.simultaneous import SimultaneousTrainer
 from trainers.reversed import ReversedTrainer
@@ -110,37 +110,47 @@ def main(exp_group, exp, trainer, seed, log, beta, sequence_len, prompt_len, bat
     # Initialize preference model if applicable
     if trainer in ['stack', 'parl', 'simul', 'reversed']:
         preference_model = initialize_reward_model(load_model(exp, MODEL_DIR, devices[1]), devices[1], 'full')
-        preference_optimizer = ExtraAdam(preference_model.parameters(), lr=1e-5) if extragradient else torch.optim.AdamW(preference_model.parameters(), lr=1e-5)
+        preference_optimizer = ExtraAdam(preference_model.parameters(), lr=1e-5, weight_decay=regularize_pref) if extragradient else torch.optim.AdamW(preference_model.parameters(), lr=1e-5, weight_decay=regularize_pref)
 
     # Trainer selection
     if trainer == 'stack':
+        group = 'Total_Grad'
         trainer = StackelbergTrainer(model, tokenizer, ref_model, preference_model, reward_func, beta, train_dataset, test_dataset, prompt_len, sequence_len, 4, num_inner, optimizer, preference_optimizer, seed, devices, cg_iter=cg_iter, ridge=ridge)
     elif trainer == 'parl':
+        group = 'PARL'
         trainer = PARLTrainer(model, tokenizer, ref_model, preference_model, beta=beta, train_dataset=train_dataset, tets_dataset=test_dataset, reward_func=reward_func, prompt_len=prompt_len, sequence_len=sequence_len, num_return_sequences=4, inner_iterations=num_inner, optimizer=optimizer, preference_optimizer=preference_optimizer, seed=seed, devices=devices)
     elif trainer == 'ppo':
+        group = 'PPO'
         critic_model = Critic(model.config.hidden_size, 256) 
         critic_optimizer = torch.optim.AdamW(critic_model.parameters(), lr=1e-5) 
-        # TODO: remove num_test_batches? 
-        trainer = RLHFTrainer(model, tokenizer, ref_model, critic_model, reward_func, beta, train_dataset, test_dataset, num_test_batches, prompt_len, sequence_len, num_return_sequences, optimizer, critic_optimizer, num_ppo_steps=4, policy_gradient_type='PPO', clip_param=0.2, seed=seed, devices=devices) 
+        trainer = RLHFTrainer(model, tokenizer, ref_model, critic_model, reward_func, beta, train_dataset, test_dataset, prompt_len, sequence_len, num_return_sequences, optimizer, critic_optimizer, num_ppo_steps=4, policy_gradient_type='PPO', clip_param=0.2, seed=seed, devices=devices) 
     elif trainer == 'simul':
+        group = 'Simultaneous'
         trainer = SimultaneousTrainer(model, tokenizer, ref_model, preference_model, reward_func, beta, train_dataset, test_dataset, prompt_len, sequence_len, num_return_sequences=4, inner_iterations=num_inner, optimizer=optimizer, preference_optimizer=preference_optimizer, seed=seed, devices=devices) 
     elif trainer == 'reversed':
+        group = 'Reversed'
         trainer = ReversedTrainer(model, tokenizer, ref_model, preference_model, reward_func, beta, train_dataset, test_dataset, prompt_len, sequence_len, num_return_sequences=4, inner_iterations=num_inner, optimizer=optimizer, preference_optimizer=preference_optimizer, seed=seed, devices=devices) 
     elif trainer == 'dpo':
+        group = "DPO"
         train_dataset = PreferenceDataset(dpo_data)
         trainer = DPOTrainer(model, tokenizer, ref_model, reward_func, optimizer, beta, train_dataset, test_dataset, prompt_len, sequence_len, seed, devices)
     elif trainer == 'idpo':
-        trainer = IteratedDPOTrainer() 
-    # Add other experiment branches (parl, rlhf, simul, reversed, dpo) similarly here
+        group = "Iterated_DPO"
+        trainer = IteratedDPOTrainer(model, tokenizer, ref_model, reward_func, optimizer, beta, train_dataset, test_dataset, prompt_len, sequence_len, 4, seed, device) 
+
+    if exp_group is not None:
+        group = f'{group}_{exp_group}'
 
     wandb.init(
         project=f'stackelberg_experiments_{exp}',
-        name=f'{exp_group}_{exp}_{seed}',
-        group=f'{exp_group}_{exp}',
+        name=f'{group}_{seed}',
+        group=group,
         config={'batch_size': batch_size, 'beta': beta, 'sequence_len': sequence_len, 'seed': seed},
         dir=f"{exp}_run",
         mode='online' if log else 'disabled'
     )
+
+    wandb.watch(model, log="all") 
 
     trainer.train(batch_size=batch_size, num_batches=num_batches)
 
@@ -165,9 +175,9 @@ if __name__ == '__main__':
     parser.add_argument('--num_batches', default=1000, type=int, help='Num batches to train')
     parser.add_argument('--num_inner', default=5, type=int, help='Num of inner iterations')
     parser.add_argument('--cg_iter', default=10, type=int, help='Num of cg iterations')
-    parser.add_argument('--regularize_pref', type=bool, help='Enables/disable regularization for preference model')
+    parser.add_argument('--regularize_pref', default=0, type=float, help='How much to regularize preferences')
     parser.add_argument('--extragradient', type=bool, help='Enables/disable extragradient for preference model')
-    parser.add_argument('--equilibrium_check', type=bool, help='Check for equilibrium')
+    parser.add_argument('--equilibrium_check', default=False, type=bool, help='Check for equilibrium')
     parser.add_argument('--dpo_data', default='', type=str, help='CSV of DPO pref data')
     parser.add_argument('--ridge', type=float, help='Ridge regularization')
     
