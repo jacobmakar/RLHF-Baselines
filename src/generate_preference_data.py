@@ -1,8 +1,8 @@
 import argparse
-from transformers import GPT2Tokenizer, OPTForCausalLM
+from transformers import GPT2Tokenizer, OPTForCausalLM, pipeline, AutoModelForSequenceClassification, AutoTokenizer
 import torch
 from torch.utils.data import DataLoader
-from utils import PromptDataset, score_nouns, score_words, score_negative
+from utils import PromptDataset, score_nouns, score_words, score_negative, sentiment_reward
 from datasets import load_dataset
 import csv
 import numpy as np
@@ -16,6 +16,11 @@ def main(task, num_return_sequences, prompt_len, sequence_len, batch_size):
         reward_func = score_nouns 
     elif task == 'penalty':
         reward_func = score_negative 
+    elif task == 'sentiment':
+        REWARD_NAME = "siebert/sentiment-roberta-large-english"
+        sentiment_pipeline = pipeline("sentiment-analysis", model=AutoModelForSequenceClassification.from_pretrained(REWARD_NAME),
+                                      tokenizer=AutoTokenizer.from_pretrained(REWARD_NAME), device=0)
+        reward_func = lambda prompt, completion: sentiment_reward(prompt, completion, sentiment_pipeline)
     else:
         print(f'{task} is not a valid task')
         exit()

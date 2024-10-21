@@ -86,6 +86,18 @@ bow_words = [
 ]
 
 
+
+def sentiment_reward(prompt, completion, sentiment_pipeline):
+    full_text = prompt + completion
+    sentiment_result = sentiment_pipeline(full_text)[0]
+
+    if sentiment_result['label'] == 'POSITIVE':
+        reward = sentiment_result['score']
+    else:
+        reward = 1 - sentiment_result['score']
+
+    return reward
+
 def score_words(prompt, response):
     '''Returns number of words from `bow_words` in response'''
     words = word_tokenize(response)

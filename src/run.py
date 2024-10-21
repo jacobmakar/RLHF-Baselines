@@ -16,19 +16,8 @@ from trainers.rlhf import RLHFTrainer
 from trainers.simultaneous import SimultaneousTrainer
 from trainers.reversed import ReversedTrainer
 from trainers.train_utils import train_main_model, train_preference_model
-from utils import Critic, PromptDataset, PreferenceDataset, score_nouns, score_num_translate, score_negative, score_words, load_ultrachat, preprocess_and_save_ultrachat, load_num2word, initialize_reward_model
+from utils import Critic, PromptDataset, PreferenceDataset, score_nouns, score_num_translate, score_negative, score_words, load_ultrachat, preprocess_and_save_ultrachat, load_num2word, initialize_reward_model, sentiment_reward
 from optimizers import ExtraAdam
-
-def sentiment_reward(prompt, completion, sentiment_pipeline):
-    full_text = prompt + completion
-    sentiment_result = sentiment_pipeline(full_text)[0]
-
-    if sentiment_result['label'] == 'POSITIVE':
-        reward = sentiment_result['score']
-    else:
-        reward = 1 - sentiment_result['score']
-
-    return reward
 
 def load_data(exp):
     if exp == 'nouns':
