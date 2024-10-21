@@ -1,9 +1,9 @@
 from datasets import load_dataset, Dataset
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
-#from data import get_imdb
+from trl import SFTTrainer
+
+# from data import get_imdb
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
-from utils import load_num2word
-import pandas as pd 
+import pandas as pd
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -29,21 +29,23 @@ if args.data == "imdb":
         train_dataset=dataset,
         dataset_text_field="text",
         max_seq_length=128,
-	    args=train_args,
+        args=train_args,
     )
-elif args.data.endswith('.csv'):
+elif args.data.endswith(".csv"):
     df = pd.read_csv(args.data)
-    dataset_dicts = [{'text': row['prompt'] + ' ' + row['target']} for _, row in df.iterrows()]
+    dataset_dicts = [
+        {"text": row["prompt"] + " " + row["target"]} for _, row in df.iterrows()
+    ]
     dataset = Dataset.from_list(dataset_dicts)
     trainer = SFTTrainer(
         model,
         train_dataset=dataset,
         max_seq_length=100,
-        dataset_text_field='text',
-	    args=train_args,
+        dataset_text_field="text",
+        args=train_args,
     )
 else:
-    print(f'{args.data} is not a valid data source')
+    print(f"{args.data} is not a valid data source")
     exit()
 
 trainer.train()
